@@ -5,7 +5,7 @@ import os
 import glob
 import shapely
 from shapely.geometry import Polygon
-from ee_computation import NDWIS2, NDVIS2, sclCloudMask_ndvi, sclCloudMask_ndwi, landsat_calculate_ndwi, landsat_calculate_ndvi, saveEEImage, calculate_ndvi_modis, calculate_ndwi_modis
+from ee_computation import NDWIS2, NDVIS2, sclCloudMask_ndvi, sclCloudMask_ndwi, landsat_calculate_ndwi, landsat_calculate_ndvi, saveEEImage, calculate_ndvi_modis, calculate_ndwi_modis, ExportEEtoDrive
 
 
 # Authenticate and initialize Earth Engine
@@ -88,15 +88,10 @@ ndvi_image_l9 = landsat9.select('NDVI').median().clip(aoi)
 ndwi_image_l9 = landsat9.select('NDWI').median().clip(aoi)
 
 # Export Landsat NDVI image to Google Drive
-task = ee.batch.Export.image.toDrive(
-    image= ndvi_image_l9,
-    description='ndwi_export',
-    folder='ee_demos',
-    region=aoi,
-    scale=30,
-    crs='EPSG:4326'
-)
-task.start()
+ExportEEtoDrive(ndvi_image_l9, "NDVI_landsat",aoi)
+ExportEEtoDrive(ndwi_image_l9, "NDWI_landsat",aoi)
+
+
 
 # MODIS analysis
 modis = ee.ImageCollection('MODIS/006/MOD09GA') \
@@ -109,13 +104,6 @@ modis_scaled = modis.map(lambda img: img.multiply(0.0001))
 modis_ndvi = modis_scaled.map(calculate_ndvi_modis).select('ndvi').mean().clip(aoi)
 modis_ndwi = modis_scaled.map(calculate_ndwi_modis).select('ndwi').mean().clip(aoi)
 
-# Export MODIS NDVI image to Google Drive
-task = ee.batch.Export.image.toDrive(
-    image=modis_ndvi,
-    description='modis_ndvi',
-    folder='ee_demos',
-    region=aoi,
-    scale=250,
-    crs='EPSG:4326'
-)
-task.start()
+
+ExportEEtoDrive(modis_ndvi,"modis_NDVI_image", aoi)
+ExportEEtoDrive(modis_ndwi,"modis_NDWI_image", aoi)
