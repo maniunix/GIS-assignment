@@ -78,6 +78,27 @@ def sclCloudMask_ndwi(image):
     maskedNdwi = ndwi.updateMask(mask)
     return ee.Image(maskedNdwi)
 
+def cloud_mask_landsat(image):
+    # Select the QA_PIXEL band
+    qa = image.select('QA_PIXEL')
+
+    # Define the cloud, shadow, cirrus, and dilated bits
+    dilated = 1 << 1
+    cirrus = 1 << 2
+    cloud = 1 << 3
+    shadow = 1 << 4
+
+    # Create a mask by checking specific bits in the QA_PIXEL band
+    mask = (qa.bitwiseAnd(dilated).eq(0)
+            .And(qa.bitwiseAnd(cirrus).eq(0))
+            .And(qa.bitwiseAnd(cloud).eq(0))
+            .And(qa.bitwiseAnd(shadow).eq(0)))
+
+    # Update the image mask with the cloud mask
+    return image.updateMask(mask)
+
+
+
 # Function to export an Earth Engine image to Google Drive
 def saveEEImage(img, aoi, path):
     """
