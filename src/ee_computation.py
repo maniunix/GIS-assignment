@@ -3,7 +3,7 @@ from shapely.geometry import Polygon
 import ee
 import geemap
 
-ee.Initialize
+ee.Initialize()
 
 import ee
 import geemap
@@ -54,7 +54,7 @@ def sclCloudMask_ndvi(image):
     crs = (ndvi.projection()).crs()
     scl = image.select('SCL')
     reScl = scl.resample('bilinear').reproject(crs=crs, scale=10)
-    mask = reScl.gt(3) & reScl.lte(7)
+    mask = reScl.gt(3) and reScl.lte(7)
     maskedNdvi = ndvi.updateMask(mask)
     return ee.Image(maskedNdvi)
 
@@ -74,7 +74,7 @@ def sclCloudMask_ndwi(image):
     crs = (ndwi.projection()).crs()
     scl = image.select('SCL')
     reScl = scl.resample('bilinear').reproject(crs=crs, scale=10)
-    mask = reScl.gt(3) & reScl.lte(7)
+    mask = reScl.gt(3) and reScl.lte(7)
     maskedNdwi = ndwi.updateMask(mask)
     return ee.Image(maskedNdwi)
 
@@ -126,8 +126,8 @@ def landsat_calculate_ndwi(image):
     ndwi = image.normalizedDifference(['SR_B5', 'SR_B6']).rename('NDWI')
     return image.addBands(ndwi)
 
-# MODIS Functions
 
+# MODIS Functions
 # Function to calculate NDVI using MODIS bands
 def calculate_ndvi_modis(image):
     """
@@ -143,6 +143,7 @@ def calculate_ndvi_modis(image):
     ndvi = image.normalizedDifference(['sur_refl_b02', 'sur_refl_b01']).rename('ndvi')
     return image.addBands(ndvi)
 
+
 # Function to calculate NDWI using MODIS bands
 def calculate_ndwi_modis(image):
     """
@@ -157,3 +158,25 @@ def calculate_ndwi_modis(image):
     """
     ndwi = image.normalizedDifference(['sur_refl_b02', 'sur_refl_b03']).rename('ndwi')
     return image.addBands(ndwi)
+
+
+
+def ExportEEtoDrive(eeimage,img_name, aoi):
+        """
+        Takes the Image as an Input and Save it to Drive
+
+        Parameters:
+            eeimage: ee.Image
+            img_name: Output Name of the Image 
+            aoi: ee.Geometry.Polygon
+        """
+        task = ee.batch.Export.image.toDrive(
+        image=eeimage,
+        description=img_name,
+        folder='ee_demos',
+        region=aoi,
+        scale=250,
+        crs='EPSG:4326'
+    )
+        task.start()
+        return print("Image saved to Drive")
