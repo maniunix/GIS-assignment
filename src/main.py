@@ -5,7 +5,7 @@ import os
 import glob
 import shapely
 from shapely.geometry import Polygon
-from ee_computation import NDWIS2, NDVIS2, sclCloudMask_ndvi, sclCloudMask_ndwi, landsat_calculate_ndwi, landsat_calculate_ndvi, saveEEImage, calculate_ndvi_modis, calculate_ndwi_modis, ExportEEtoDrive
+from ee_computation import NDWIS2, NDVIS2, sclCloudMask_ndvi, sclCloudMask_ndwi, landsat_calculate_ndwi, landsat_calculate_ndvi, saveEEImage, calculate_ndvi_modis, calculate_ndwi_modis, ExportEEtoDrive, cloud_mask_landsat
 
 
 # Authenticate and initialize Earth Engine
@@ -55,11 +55,11 @@ def getIndexRaster(aoi: ee.Geometry.Polygon, sdate: str, edate: str, indice: str
     if indice == "NDVI":
         dataset = ee.ImageCollection('COPERNICUS/S2_SR').filterDate(sdate, edate).filterBounds(aoi)
         data = dataset.map(NDVIS2).map(sclCloudMask_ndvi).select('NDVI').map(clipImage).mean()
-        saveEEImage(data, aoi, f'{indice}_image.tif')
+        saveEEImage(data, aoi, f'output/{indice}_image.tif')
     else:
         dataset = ee.ImageCollection('COPERNICUS/S2_SR').filterDate(sdate, edate).filterBounds(aoi)
         data = dataset.map(NDWIS2).map(sclCloudMask_ndwi).select('NDWI').map(clipImage).mean()
-        saveEEImage(data, aoi, f'{indice}_image.tif')
+        saveEEImage(data, aoi, f'output/{indice}_image.tif')
     return data
 
 # Read shapefile and convert to Earth Engine Geometry
@@ -82,7 +82,7 @@ landsat9 = (
     ee.ImageCollection("LANDSAT/LC09/C02/T1_L2")
     .filterDate(sdate, edate)
     .filterBounds(aoi)
-).map(landsat_calculate_ndvi).map(landsat_calculate_ndwi)
+).map(cloud_mask_landsat).map(landsat_calculate_ndvi).map(landsat_calculate_ndwi)
 
 ndvi_image_l9 = landsat9.select('NDVI').median().clip(aoi)
 ndwi_image_l9 = landsat9.select('NDWI').median().clip(aoi)
@@ -94,10 +94,9 @@ ExportEEtoDrive(ndwi_image_l9, "NDWI_landsat",aoi)
 
 
 # MODIS analysis
-modis = ee.ImageCollection('MODIS/006/MOD09GA') \
+modis = ee.ImageCollection('MODIS/061/MOD09GQ') \
     .filterDate(sdate, edate) \
-    .filterBounds(aoi) \
-    .select(['sur_refl_b01', 'sur_refl_b02'])
+    .filterBounds(aoi)
 
 modis_scaled = modis.map(lambda img: img.multiply(0.0001))
 
